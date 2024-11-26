@@ -1,19 +1,19 @@
 # CMOD_RGR
 
 ## Getting started
-- Windows
-git clone https://github.com/kn0wleadge/CMOD_RGR
-cd CMOD_RGR
-python -m venv myenv
-myenv\Scripts\activate
-pip install -r requirments.txt
+- Windows:
+git clone https://github.com/kn0wleadge/CMOD_RGR  
+cd CMOD_RGR  
+python -m venv myenv  
+myenv\Scripts\activate  
+pip install -r requirments.txt  
 
-- Linux
-git clone https://github.com/kn0wleadge/CMOD_RGR
-cd CMOD_RGR
-python3 -m venv myenv
-source myenv/bin/activate
-pip install -r requirments.txt
+- Linux:
+git clone https://github.com/kn0wleadge/CMOD_RGR  
+cd CMOD_RGR  
+python3 -m venv myenv  
+source myenv/bin/activate  
+pip install -r requirments.txt  
 
 
 
