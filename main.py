@@ -68,7 +68,7 @@ from IPython.display import display, HTML
 # df = pd.DataFrame(data) 
 with open('/home/eugene/Study/kmod/rgr/f15/ssj/1999/12/j4f1599351', 'rb') as f:
 
-    array  = np.fromfile(f, dtype = np.uint16)
+    array  = np.fromfile(f, dtype = ">u2")
     print(array.size)
     j = 0
     for i in range(array.size):
