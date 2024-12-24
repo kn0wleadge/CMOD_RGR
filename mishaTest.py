@@ -173,6 +173,7 @@ def transformToGeophysicalQuantity(valueType, flightNumber, channelType, channel
         1: 9600, 2: 8050, 3: 5475, 4: 3720, 5:2525, 6: 1730, 7: 1180, 8: 804, 9: 545.5, 10: 373,
         11: 373, 12: 254.5, 13: 173, 14: 118, 15: 80.5, 16: 54.5, 17: 37, 18: 25.5, 19: 17, 20: 14,
     }
+    
     def calculateDifferentialNumberFluxForChannel(channel, counts):
         if channelType == "ions":
             return (counts) / (IonsChannelsGeometricFactors[flightNumber][channel] * 0.098)
@@ -181,14 +182,13 @@ def transformToGeophysicalQuantity(valueType, flightNumber, channelType, channel
     def calculateDifferentialEnergyFluxForChannel(channel, counts):
         return (calculateDifferentialNumberFluxForChannel(channel, counts) * ChannelCentralEnergy[channel])
     def calculateIntegratedNumberFlux(channels):
-        #print(channels)
         return sum([calculateDifferentialNumberFluxForChannel(i,counts[i-1]) * ChannelSpasing[i] for i in channels])
     def calculateIntegratedEnergyFlux(channels):
-        return sum([calculateIntegratedNumberFlux(channels) * ChannelCentralEnergy[i] * ChannelSpasing[i] for i in channels])
+        return sum([calculateDifferentialEnergyFluxForChannel(i,counts[i-1]) * ChannelSpasing[i] for i in channels])
     def calculateMeanEnergy(channels):
         return calculateIntegratedEnergyFlux(channels) / calculateIntegratedNumberFlux(channels)
     
-    print(valueType, flightNumber, channelType, channel, counts)
+    #print(valueType, flightNumber, channelType, channel, counts)
     if valueType == "differential number flux":
         return calculateDifferentialNumberFluxForChannel(channel, counts)
     elif valueType == "differential energy flux":
@@ -301,8 +301,8 @@ with open(filename, 'rb') as f:
     print(f'Test for  differential number flux for 4channel of ions of 1st second of data for 2nd minute: {transformToGeophysicalQuantity(valueType="differential number flux", flightNumber=flightNumber, channelType="ions", channel=4, counts=getCountsFromData(array[38+1*2640+0*43]))}')
     print(f'Test for  differential energy flux for 13channel of electorns of 2nd second of data for 2nd minute: {transformToGeophysicalQuantity(valueType="differential energy flux", flightNumber=flightNumber, channelType="electrons", channel=13, counts=getCountsFromData(array[33+1*2640+1*43]))}')
     print(f'Test for  integrated number flux for 1-20 channels of electorns of 2nd second of data for 2nd minute: {transformToGeophysicalQuantity(valueType="integrated number flux", flightNumber=flightNumber, channelType="electrons", channel=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], counts=electronsCounts[3])}')
-    # print(f'Test for  integrated energy flux: {transformToGeophysicalQuantity(valueType='', flightNumber=flightNumber, channelType='', channel=(), counts=)}')
-    # print(f'Test for  mean energy: {transformToGeophysicalQuantity(valueType='', flightNumber=flightNumber, channelType='', channel=(), counts=)}')
+    print(f'Test for  integrated energy flux for 1-20 channels of electrons of 2nd second of data for 2nd minute: {transformToGeophysicalQuantity(valueType="integrated energy flux", flightNumber=flightNumber, channelType="electrons", channel=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], counts=electronsCounts[3])}')
+    print(f'Test for  mean energy for 1-20 channels of electrons of 2nd second of data for 2nd minute: {transformToGeophysicalQuantity(valueType="mean energy", flightNumber=flightNumber, channelType="electrons", channel=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], counts=electronsCounts[3])}')
     #print(electronsCounts[3])
     del array
     
