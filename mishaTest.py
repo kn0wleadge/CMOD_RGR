@@ -209,10 +209,12 @@ flightDay = filePathVars[-1][7:10]
 with open(filename, 'rb') as f:
     array  = np.fromfile(f, dtype = '>u2')
     electronsCounts = []
+    resultArray = np.array()
     print(array.size)
     print(minutesOfData := array.size / 2640)
     #Шапка для i-ой минуты
     for (j) in range(2): #minutesOfData):
+        
         print(f'Data for {j + 1} minute of data:')
         print("Day of year: ", array[0 + j*2640])
         print("Hour of day: ", array[1 + j*2640])
