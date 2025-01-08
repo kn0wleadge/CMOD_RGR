@@ -3,23 +3,6 @@ import xarray as xr
 from unzip import unzip
 
 
-def getDateFromFileName(filename):
-    def is_leap_year(year):
-        return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
-    flightDay = int(filename.split('/')[-1][-3:])
-    flightYear = int(filename.split('/')[-1][3:5])
-    month_days = [31, 28 + is_leap_year(flightYear), 31, 30, 31, 30, 
-                  31, 31, 30, 31, 30, 31]  # Февраль учитывает високосный год
-    month = 0
-    while flightDay > month_days[month]:
-        flightDay -= month_days[month]
-        month += 1
-    if flightYear > 25:
-        flightYear = "19"+str(flightYear)
-    else:
-        flightYear = "20"+str(flightYear)
-    return f"{str.zfill(str(flightDay),2)}.{str.zfill(str(month + 1),2)}.{flightYear}"
-
 
 def getDateFromFileName(filename):
     def is_leap_year(year):
@@ -107,6 +90,7 @@ def getCountsFromData(data):
     Y = (data - X) / 32
     counts = (X + 32) * pow(2,Y) - 33
     return counts
+
 def createTransformedDataMeasuresSet(filename):
     path = filename
     if filename.find(".gz",0) != -1:
@@ -165,7 +149,7 @@ def createTransformedDataMeasuresSet(filename):
             result[j][42] = getCountsFromData(array[54+(j // 60)*2640+(j % 60)*43]) #Chanel 20, 30 eV ions
         #TODO: возвращать дата сет
         del array
-        flightDate = getDateFromFileName(filename)
+        flightDate = getDateFromFileName(path)
         expectedTime = np.arange(1,result.shape[0]+1)
         ds = xr.Dataset(
             data_vars=dict(
