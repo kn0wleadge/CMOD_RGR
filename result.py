@@ -15,9 +15,9 @@ def getDateFromFileName(filename):
         flightDay -= month_days[month]
         month += 1
     if flightYear > 25:
-        flightYear = "19"+str(flightYear)
+        flightYear = "19"+str.zfill(str(flightYear),2)
     else:
-        flightYear = "20"+str(flightYear)
+        flightYear = "20"+str.zfill(str(flightYear),2)
     return f"{str.zfill(str(flightDay),2)}.{str.zfill(str(month + 1),2)}.{flightYear}"
 
 def createTransformedDataVariablesSet(filename):
