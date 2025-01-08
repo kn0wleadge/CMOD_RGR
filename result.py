@@ -3,12 +3,11 @@ import xarray as xr
 from unzip import unzip
 
 
-
 def getDateFromFileName(filename):
     def is_leap_year(year):
         return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
     flightDay = int(filename.split('/')[-1][-3:])
-    flightYear = int(filename.split('/')[-1][3:5])
+    flightYear = int(filename.split('/')[-1][5:7])
     month_days = [31, 28 + is_leap_year(flightYear), 31, 30, 31, 30, 
                   31, 31, 30, 31, 30, 31]  # Февраль учитывает високосный год
     month = 0
@@ -147,58 +146,24 @@ def createTransformedDataMeasuresSet(filename):
             result[j][40] = getCountsFromData(array[56+(j // 60)*2640+(j % 60)*43]) #Chanel 18, 65 eV ions
             result[j][41] = getCountsFromData(array[55+(j // 60)*2640+(j % 60)*43]) #Chanel 19, 44 eV ions
             result[j][42] = getCountsFromData(array[54+(j // 60)*2640+(j % 60)*43]) #Chanel 20, 30 eV ions
-        #TODO: возвращать дата сет
         del array
         flightDate = getDateFromFileName(path)
         expectedTime = np.arange(1,result.shape[0]+1)
+        print()
+        channels_types=["electrons","ions"]
+        channels=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
         ds = xr.Dataset(
             data_vars=dict(
                 real_Hours=         (["expected_time"], result[:, 0]),
                 real_Minutes=       (["expected_time"], result[:, 1]),
                 real_MiliSeconds=   (["expected_time"], result[:, 2]),
-                channel_1_Electrons=(["expected_time"], result[:, 3]),
-                channel_2_Electrons=(["expected_time"], result[:, 4]),
-                channel_3_Electrons=(["expected_time"], result[:, 5]),
-                channel_4_Electrons=(["expected_time"], result[:, 6]),
-                channel_5_Electrons=(["expected_time"], result[:, 7]),
-                channel_6_Electrons=(["expected_time"], result[:, 8]),
-                channel_7_Electrons=(["expected_time"], result[:, 9]),
-                channel_8_Electrons=(["expected_time"], result[:, 10]),
-                channel_9_Electrons=(["expected_time"], result[:, 11]),
-                channel_10_Electrons=(["expected_time"], result[:,12]),
-                channel_11_Electrons=(["expected_time"], result[:,13]),
-                channel_12_Electrons=(["expected_time"], result[:,14]),
-                channel_13_Electrons=(["expected_time"], result[:,15]),
-                channel_14_Electrons=(["expected_time"], result[:,16]),
-                channel_15_Electrons=(["expected_time"], result[:,17]),
-                channel_16_Electrons=(["expected_time"], result[:,18]),
-                channel_17_Electrons=(["expected_time"], result[:,19]),
-                channel_18_Electrons=(["expected_time"], result[:,20]),
-                channel_19_Electrons=(["expected_time"], result[:,21]),
-                channel_20_Electrons=(["expected_time"], result[:,22]),
-                channel_1_Ions=      (["expected_time"], result[:,23]),
-                channel_2_Ions=      (["expected_time"], result[:,24]),
-                channel_3_Ions=      (["expected_time"], result[:,25]),
-                channel_4_Ions=      (["expected_time"], result[:,26]),
-                channel_5_Ions=      (["expected_time"], result[:,27]),
-                channel_6_Ions=      (["expected_time"], result[:,28]),
-                channel_7_Ions=      (["expected_time"], result[:,29]),
-                channel_8_Ions=      (["expected_time"], result[:,30]),
-                channel_9_Ions=      (["expected_time"], result[:,31]),
-                channel_10_Ions=     (["expected_time"], result[:,32]),
-                channel_11_Ions=     (["expected_time"], result[:,33]),
-                channel_12_Ions=     (["expected_time"], result[:,34]),
-                channel_13_Ions=     (["expected_time"], result[:,35]),
-                channel_14_Ions=     (["expected_time"], result[:,36]),
-                channel_15_Ions=     (["expected_time"], result[:,37]),
-                channel_16_Ions=     (["expected_time"], result[:,38]),
-                channel_17_Ions=     (["expected_time"], result[:,39]),
-                channel_18_Ions=     (["expected_time"], result[:,40]),
-                channel_19_Ions=     (["expected_time"], result[:,41]),
-                channel_20_Ions=     (["expected_time"], result[:,42]),
+                measures =  (["channels","expected_time","channel_type"],
+                             np.stack(([result[:,i+3:i+24:20] for i in range(20)]),axis=0)),
             ),
             coords=dict(
-                expected_time=expectedTime
+                expected_time=expectedTime,
+                channel_type=channels_types,
+                channels=channels
             ),
             attrs=dict(description=f"SSJ4 transformed measures for every second on day {flightDate}")
         )
