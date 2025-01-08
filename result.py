@@ -1,5 +1,6 @@
 import numpy as np
 import xarray as xr
+import matplotlib.pyplot as plt
 from unzip import unzip
 
 
@@ -35,19 +36,57 @@ def createTransformedDataVariablesSet(filename):
             result[j, 2] = array[2 + j*2640] #Minute of hour
             result[j, 3] = array[3 + j*2640] #Second of minute
             result[j, 4] = 1950 + array[4 + j*2640] #Integer year
-            result[j, 5] = float(array[5 + j*2640]) - 4995/10.0 if array[5 + j*2640] > 1800 else float(array[5 + j*2640])-900/10.0 #Geodetic latitude
+            result[j, 5] = float(int(array[5 + j*2640]) - 4995.0)/10.0 if array[5 + j*2640] > 1800 else float(int(array[5 + j*2640])-900)/10.0 #Geodetic latitude
             result[j, 6] = float(array[6 + j*2640])/10.0 #Geodetic longitude
             result[j, 7] = array[7 + j*2640] #Altitude, nautical miles
-            result[j, 8] = float(array[8 + j*2640]) - 4995/10.0 if array[8 + j*2640] > 1800 else float(array[8 + j*2640])-900/10.0 #Geographic latitude at 110 km altitude and on the same magnetic field line as the DMSP spacecraft
+            result[j, 8] = float(int(array[8 + j*2640]) - 4995)/10.0 if array[8 + j*2640] > 1800 else float(int(array[8 + j*2640])-900)/10.0 #Geographic latitude at 110 km altitude and on the same magnetic field line as the DMSP spacecraft
             result[j, 9] = float(array[9 + j*2640]/10.0) #Geographic longitude at 110 km altitude and on the same magnetic field line as the DMSP spacecraft
-            result[j, 10] = float(array[10 + j*2640]) - 4995/10.0 if array[10 + j*2640] > 1800 else float(array[10 + j*2640])-900/10.0 #Corrected geomagnetic latitude at 110km
+            result[j, 10] = float(int(array[10 + j*2640]) - 4995)/10.0 if array[10 + j*2640] > 1800 else float(int(array[10 + j*2640])-900)/10.0 #Corrected geomagnetic latitude at 110km
             result[j, 11] = float(array[11 + j*2640]/10.0) #Corrected geomagnetic longitude at 100km
             result[j, 12] = array[12 + j*2640] #Hour of magnetic local time
             result[j, 13] = array[13 + j*2640] #Minute of hour of magnetic local time
             result[j, 14] = array[14 + j*2640] #Second of minute of magnetic local time
         del array
-        #TODO: возвращать Dataset
-        return result
+        flightDate = getDateFromFileName(path)
+        expectedTime = np.arange(result.shape[0])
+        location = ["lat", "lon"]
+        dateType = ["year","day","hour","minute","second","time"]
+        magneticTimeType = ["hour","minute","second","time"]
+        ds = xr.Dataset(
+            data_vars=dict(
+                real_datetime =                                  (["date_type","expected_time"],
+                                                                  np.stack((
+                                                                      result[:, 4],
+                                                                      result[:, 0],
+                                                                      result[:, 1],
+                                                                      result[:, 2],
+                                                                      result[:, 3],
+                                                                      result[:, 1]*60+result[:, 2]+result[:, 3]/60
+                                                                      ),axis=0)),
+                real_geodic_location =                           (["location","expected_time"], 
+                                                                  np.stack((result[:, 5], result[:, 6]), axis=0)),
+                real_altitude =                                  (["expected_time"], result[:, 7]),
+                real_geographic_location =                       (["location","expected_time"],
+                                                                  np.stack((result[:, 8], result[:, 9]), axis=0)),
+                real_corrected_geomagnetic_location =            (["location","expected_time"],
+                                                                  np.stack((result[:, 10], result[:, 11]), axis=0)),
+                real_magnetic_local_time =                       (["magnetic_time_type","expected_time"], 
+                                                                  np.stack((
+                                                                      result[:, 12],
+                                                                      result[:, 13],
+                                                                      result[:, 14],
+                                                                      result[:, 12]*60+result[:, 13]+result[:, 14]/60
+                                                                      ),axis=0)),
+            ),
+            coords=dict(
+                date_type=dateType,
+                expected_time=expectedTime,
+                location=location,
+                magnetic_time_type=magneticTimeType,
+            ),
+            attrs=dict(description=f"SSJ4 raw data variables on day {flightDate}")
+        )
+        return ds
     
     
 def createRawDataVariablesSet(filename):
@@ -72,12 +111,36 @@ def createRawDataVariablesSet(filename):
             result[j][9] = array[9 + j*2640] #Geographic longitude at 110 km altitude and on the same magnetic field line as the DMSP spacecraft
             result[j][10] = array[10 + j*2640] #Corrected geomagnetic latitude at 110km
             result[j][11] = array[11 + j*2640] #Corrected geomagnetic longitude at 100km
-            result[j][12] = array[12 + j*2640] #Hour of magnetic local time
+            result[j][12] = array[12 + j*2640] #Hour of f f magnetic local time
             result[j][13] = array[13 + j*2640] #Minute of hour of magnetic local time
             result[j][14] = array[14 + j*2640] #Second of minute of magnetic local time
         del array
-        #TODO: возвращать Dataset
-        return result
+        flightDate = getDateFromFileName(path)
+        expectedTime = np.arange(result.shape[0])
+        ds = xr.Dataset(
+            data_vars=dict(
+                raw_day_of_year =                               (["expected_time"], result[:, 0]),
+                raw_hour_of_day =                               (["expected_time"], result[:, 1]),
+                raw_minute_of_hour =                            (["expected_time"], result[:, 2]),
+                raw_second_of_minute =                          (["expected_time"], result[:, 3]),
+                raw_integer_year =                              (["expected_time"], result[:, 4]),
+                raw_geodic_latitude =                           (["expected_time"], result[:, 5]),
+                raw_geodic_longitude =                          (["expected_time"], result[:, 6]),
+                raw_altitude =                                  (["expected_time"], result[:, 7]),
+                raw_geographic_latitude =                       (["expected_time"], result[:, 8]),
+                raw_geographic_longitude =                      (["expected_time"], result[:, 9]),
+                raw_corrected_geomagnetic_latitude =            (["expected_time"], result[:, 10]),
+                raw_corrected_geomagnetic_longitude =           (["expected_time"], result[:, 11]),
+                raw_hour_of_magnetic_local_time =               (["expected_time"], result[:, 12]),
+                raw_minute_of_hour_of_magnetic_local_time =     (["expected_time"], result[:, 13]),
+                raw_second_of_minute_of_magnetic_local_time =   (["expected_time"], result[:, 14]),
+            ),
+            coords=dict(
+                expected_time=expectedTime,
+            ),
+            attrs=dict(description=f"SSJ4 raw data variables on day {flightDate}")
+        )
+        return ds
     
     
 def getCountsFromData(data):
@@ -148,15 +211,15 @@ def createTransformedDataMeasuresSet(filename):
             result[j][42] = getCountsFromData(array[54+(j // 60)*2640+(j % 60)*43]) #Chanel 20, 30 eV ions
         del array
         flightDate = getDateFromFileName(path)
-        expectedTime = np.arange(1,result.shape[0]+1)
-        print()
+        expectedTime = np.arange(0,result.shape[0])
         channels_types=["electrons","ions"]
         channels=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
         ds = xr.Dataset(
             data_vars=dict(
-                real_Hours=         (["expected_time"], result[:, 0]),
-                real_Minutes=       (["expected_time"], result[:, 1]),
-                real_MiliSeconds=   (["expected_time"], result[:, 2]),
+                real_hours=         (["expected_time"], result[:, 0]),
+                real_minutes=       (["expected_time"], result[:, 1]),
+                real_seconds=   (["expected_time"], result[:, 2]/1000),
+                real_time = (["expected_time"], result[:,0]*3600+result[:,1]*60+result[:,2]/1000),
                 measures =  (["channels","expected_time","channel_type"],
                              np.stack(([result[:,i+3:i+24:20] for i in range(20)]),axis=0)),
             ),
@@ -224,34 +287,56 @@ def createRawDataMeasuresSet(filename):
             result[j][41] = array[55+(j // 60)*2640+(j % 60)*43] #Chanel 19, 44 eV ions
             result[j][42] = array[54+(j // 60)*2640+(j % 60)*43] #Chanel 20, 30 eV ions
         del array
-        #Тут все ок
-        #TODO: возвращать Dataset
-        return result
-#def createDataSets(filename):
+        
+        flightDate = getDateFromFileName(path)
+        expectedTime = np.arange(result.shape[0])
+        channels_types=["electrons","ions"]
+        channels=np.array([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],dtype=np.int8)
+        ds = xr.Dataset(
+            data_vars=dict(
+                raw_real_hours=         (["expected_time"], result[:, 0]),
+                raw_real_minutes=       (["expected_time"], result[:, 1]),
+                raw_real_seconds=   (["expected_time"], result[:, 2]),
+                raw_measures =  (["channels","expected_time","channel_type"],
+                             np.stack(([result[:,i+3:i+24:20] for i in range(20)]),axis=0)),
+            ),
+            coords=dict(
+                expected_time=expectedTime,
+                channel_type=channels_types,
+                channels=channels
+            ),
+            attrs=dict(description=f"SSJ4 raw measures for every second on day {flightDate}")
+        )
+        return ds
     
     
 
 filename = 'f15/ssj/2005/03/j4f1505060'
-filePathVars = filename.split('/')
-flightNumber = filePathVars[-1][2:5]
-flightYear = filePathVars[-1][5:7]
-flightDay = filePathVars[-1][7:10]
 
-#print(createTransformedDataVariablesSet(filename)[0,:].tolist()) #Тест получения преобразованных переменных для каждой минуты
-## ---- все ок
-#print(createRawDataVariablesSet(filename)[0, :].tolist()) #Тест получения сырых переменных для каждой минуты
-## ---- все ок
+#data = createTransformedDataMeasuresSet(filename)
+#datavars = createTransformedDataVariablesSet(filename)
 
-##print(getMax(createRawDataMeasuresSet(filename)[0:1,:].tolist())) #Тест получения сырых данных для каждой секунды
-#print(createRawDataMeasuresSet(filename)[0:3,:])
-## ---- все ок
-# for i in range(1,366):
-#     print(getCountsFromData(np.max(createRawDataMeasuresSet(f'f15/ssj/2005/test/j4f1505{str.zfill(str(i),3)}')[:,3::])))
-#     print(str.zfill(str(i),3))
+#Plotting examples
+plt.style.use("seaborn-v0_8-whitegrid")
 
-print(createTransformedDataMeasuresSet(filename))
-#TODO: сделать метод, возвращающий датасет для преобразованных данных для каждой секунды |
-#сделать проверку отправляемого в методы файлы на архив (если отправляется архив, то он распаковывается и дальше идет файл)
-#думаю это надо для красоты сделать через обертку методов |
-#подумать насчет предоставления методов для работы с данными сенсеров (преобразование к геофизическим данным) |
-#сделать визуализацию через seaborn
+# datavars.real_datetime.isel(date_type=[0,1,2,3]).plot.line("-o",x="expected_time")
+# plt.show()
+
+# datavars.real_geographic_location.isel(location=0).plot.line("-o",x="expected_time")
+# plt.show()
+
+# data.measures.isel(channels=0, channel_type=[0,1], expected_time=range(120)).plot.line("-o", x="expected_time")
+# plt.show()
+
+# data.measures.isel(channels=range(20)[0::8], channel_type=0).plot.line("-o", x="expected_time")
+# plt.yscale("log", base=10)
+# plt.show()
+
+# data.real_Hours.isel().plot.line("-o")
+# data.real_Minutes.isel().plot.line("-o")
+# plt.show()
+
+# data.real_Time.isel().plot.line("-o")
+# plt.xlim(0,100)
+# plt.ylim(0,100)
+# plt.show()
