@@ -1,8 +1,13 @@
 import numpy as np
 import xarray as xr
+from unzip import unzip
 
 def createTransformedDataVariablesSet(filename):
-    with open(filename, 'rb') as f:
+    path = filename
+    if filename.find(".gz",0) != -1:
+        unzip(filename)
+        path = filename[0:len(path) - 3]
+    with open(path, 'rb') as f:
         array = np.fromfile(f, dtype = '>u2')
         minutesOfData = int(array.size / 2640)
         result = np.empty((minutesOfData, 15), dtype=np.float16)
@@ -28,7 +33,11 @@ def createTransformedDataVariablesSet(filename):
     
     
 def createRawDataVariablesSet(filename):
-    with open(filename, 'rb') as f:
+    path = filename
+    if filename.find(".gz",0) != -1:
+        unzip(filename)
+        path = filename[0:len(path) - 3]
+    with open(path, 'rb') as f:
         array = np.fromfile(f, dtype = '>u2')
         minutesOfData = int(array.size / 2640)
         result = np.empty((minutesOfData, 15), dtype='>u2')
@@ -63,7 +72,11 @@ def getCountsFromData(data):
     counts = (X + 32) * pow(2,Y) - 33
     return counts
 def createTransformedDataMeasuresSet(filename):
-    with open(filename, 'rb') as f:
+    path = filename
+    if filename.find(".gz",0) != -1:
+        unzip(filename)
+        path = filename[0:len(path) - 3]
+    with open(path, 'rb') as f:
         array = np.fromfile(f, dtype = '>u2')
         minutesOfData = int(array.size / 2640)
         result = np.empty((minutesOfData*60, 43), dtype=np.int32)
@@ -120,7 +133,11 @@ def createTransformedDataMeasuresSet(filename):
     
 
 def createRawDataMeasuresSet(filename):
-    with open(filename, 'rb') as f:
+    path = filename
+    if filename.find(".gz",0) != -1:
+        unzip(filename)
+        path = filename[0:len(path) - 3]
+    with open(path, 'rb') as f:
         array = np.fromfile(f, dtype = '>u2')
         minutesOfData = int(array.size / 2640)
         result = np.empty((minutesOfData*60, 43), dtype=np.uint16)
@@ -188,7 +205,7 @@ flightDay = filePathVars[-1][7:10]
 ## ---- все ок
 
 #print(getMax(createRawDataMeasuresSet(filename)[0:1,:].tolist())) #Тест получения сырых данных для каждой секунды
-print(createRawDataMeasuresSet(filename)[0:3,:])
+#print(createRawDataMeasuresSet(filename)[0:3,:])
 ## ---- все ок
 # for i in range(1,366):
 #     print(getCountsFromData(np.max(createRawDataMeasuresSet(f'f15/ssj/2005/test/j4f1505{str.zfill(str(i),3)}')[:,3::])))
