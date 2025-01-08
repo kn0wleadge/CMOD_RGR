@@ -1,5 +1,24 @@
 import numpy as np
 import xarray as xr
+from unzip import unzip
+
+
+def getDateFromFileName(filename):
+    def is_leap_year(year):
+        return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+    flightDay = int(filename.split('/')[-1][-3:])
+    flightYear = int(filename.split('/')[-1][3:5])
+    month_days = [31, 28 + is_leap_year(flightYear), 31, 30, 31, 30, 
+                  31, 31, 30, 31, 30, 31]  # Февраль учитывает високосный год
+    month = 0
+    while flightDay > month_days[month]:
+        flightDay -= month_days[month]
+        month += 1
+    if flightYear > 25:
+        flightYear = "19"+str(flightYear)
+    else:
+        flightYear = "20"+str(flightYear)
+    return f"{str.zfill(str(flightDay),2)}.{str.zfill(str(month + 1),2)}.{flightYear}"
 
 
 def getDateFromFileName(filename):
@@ -20,7 +39,11 @@ def getDateFromFileName(filename):
     return f"{str.zfill(str(flightDay),2)}.{str.zfill(str(month + 1),2)}.{flightYear}"
 
 def createTransformedDataVariablesSet(filename):
-    with open(filename, 'rb') as f:
+    path = filename
+    if filename.find(".gz",0) != -1:
+        unzip(filename)
+        path = filename[0:len(path) - 3]
+    with open(path, 'rb') as f:
         array = np.fromfile(f, dtype = '>u2')
         minutesOfData = int(array.size / 2640)
         result = np.empty((minutesOfData, 15), dtype=np.float16)
@@ -46,7 +69,11 @@ def createTransformedDataVariablesSet(filename):
     
     
 def createRawDataVariablesSet(filename):
-    with open(filename, 'rb') as f:
+    path = filename
+    if filename.find(".gz",0) != -1:
+        unzip(filename)
+        path = filename[0:len(path) - 3]
+    with open(path, 'rb') as f:
         array = np.fromfile(f, dtype = '>u2')
         minutesOfData = int(array.size / 2640)
         result = np.empty((minutesOfData, 15), dtype='>u2')
@@ -81,7 +108,11 @@ def getCountsFromData(data):
     counts = (X + 32) * pow(2,Y) - 33
     return counts
 def createTransformedDataMeasuresSet(filename):
-    with open(filename, 'rb') as f:
+    path = filename
+    if filename.find(".gz",0) != -1:
+        unzip(filename)
+        path = filename[0:len(path) - 3]
+    with open(path, 'rb') as f:
         array = np.fromfile(f, dtype = '>u2')
         minutesOfData = int(array.size / 2640)
         result = np.empty((minutesOfData*60, 43), dtype=np.int32)
@@ -189,9 +220,13 @@ def createTransformedDataMeasuresSet(filename):
         )
         return ds
     
-    
+
 def createRawDataMeasuresSet(filename):
-    with open(filename, 'rb') as f:
+    path = filename
+    if filename.find(".gz",0) != -1:
+        unzip(filename)
+        path = filename[0:len(path) - 3]
+    with open(path, 'rb') as f:
         array = np.fromfile(f, dtype = '>u2')
         minutesOfData = int(array.size / 2640)
         result = np.empty((minutesOfData*60, 43), dtype=np.uint16)
@@ -258,7 +293,8 @@ flightDay = filePathVars[-1][7:10]
 #print(createRawDataVariablesSet(filename)[0, :].tolist()) #Тест получения сырых переменных для каждой минуты
 ## ---- все ок
 
-#print(createTransformedDataMeasuresSet(filename)[58,:].tolist()) #Тест получения сырых данных для каждой секунды
+##print(getMax(createRawDataMeasuresSet(filename)[0:1,:].tolist())) #Тест получения сырых данных для каждой секунды
+#print(createRawDataMeasuresSet(filename)[0:3,:])
 ## ---- все ок
 # for i in range(1,366):
 #     print(getCountsFromData(np.max(createRawDataMeasuresSet(f'f15/ssj/2005/test/j4f1505{str.zfill(str(i),3)}')[:,3::])))
