@@ -73,7 +73,7 @@ def createTransformedDataMeasuresSet(filename):
         del array
         return result
     
-    
+
 def createRawDataMeasuresSet(filename):
     with open(filename, 'rb') as f:
         array = np.fromfile(f, dtype = '>u2')
@@ -143,7 +143,8 @@ flightDay = filePathVars[-1][7:10]
 #print(createRawDataVariablesSet(filename)[0, :].tolist()) #Тест получения сырых переменных для каждой минуты
 ## ---- все ок
 
-#print(createRawDataMeasuresSet(filename)[0:4,:].tolist()) #Тест получения сырых данных для каждой секунды
+#print(getMax(createRawDataMeasuresSet(filename)[0:1,:].tolist())) #Тест получения сырых данных для каждой секунды
+print(createRawDataMeasuresSet(filename)[0:3,:])
 ## ---- все ок
 
 #TODO: сделать метод, возвращающий датасет для преобразованных данных для каждой секунды |
