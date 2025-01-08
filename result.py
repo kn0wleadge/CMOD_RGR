@@ -1,6 +1,24 @@
 import numpy as np
 import xarray as xr
 
+
+def getDateFromFileName(filename):
+    def is_leap_year(year):
+        return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+    flightDay = int(filename.split('/')[-1][-3:])
+    flightYear = int(filename.split('/')[-1][3:5])
+    month_days = [31, 28 + is_leap_year(flightYear), 31, 30, 31, 30, 
+                  31, 31, 30, 31, 30, 31]  # Февраль учитывает високосный год
+    month = 0
+    while flightDay > month_days[month]:
+        flightDay -= month_days[month]
+        month += 1
+    if flightYear > 25:
+        flightYear = "19"+str(flightYear)
+    else:
+        flightYear = "20"+str(flightYear)
+    return f"{str.zfill(str(flightDay),2)}.{str.zfill(str(month + 1),2)}.{flightYear}"
+
 def createTransformedDataVariablesSet(filename):
     with open(filename, 'rb') as f:
         array = np.fromfile(f, dtype = '>u2')
@@ -67,7 +85,7 @@ def createTransformedDataMeasuresSet(filename):
         array = np.fromfile(f, dtype = '>u2')
         minutesOfData = int(array.size / 2640)
         result = np.empty((minutesOfData*60, 43), dtype=np.int32)
-        for (j) in range(minutesOfData):
+        for (j) in range(minutesOfData*60):
             result[j][0] = array[15+(j // 60)*2640+(j % 60)*43] # Hour of day for {i+1} second of data
             result[j][1] = array[16+(j // 60)*2640+(j % 60)*43] # Minute of hour for {i+1} second of data
             if array[2595+(j // 60)*2640] == 1:
@@ -116,7 +134,60 @@ def createTransformedDataMeasuresSet(filename):
             result[j][42] = getCountsFromData(array[54+(j // 60)*2640+(j % 60)*43]) #Chanel 20, 30 eV ions
         #TODO: возвращать дата сет
         del array
-        return result
+        flightDate = getDateFromFileName(filename)
+        expectedTime = np.arange(1,result.shape[0]+1)
+        ds = xr.Dataset(
+            data_vars=dict(
+                real_Hours=         (["expected_time"], result[:, 0]),
+                real_Minutes=       (["expected_time"], result[:, 1]),
+                real_MiliSeconds=   (["expected_time"], result[:, 2]),
+                channel_1_Electrons=(["expected_time"], result[:, 3]),
+                channel_2_Electrons=(["expected_time"], result[:, 4]),
+                channel_3_Electrons=(["expected_time"], result[:, 5]),
+                channel_4_Electrons=(["expected_time"], result[:, 6]),
+                channel_5_Electrons=(["expected_time"], result[:, 7]),
+                channel_6_Electrons=(["expected_time"], result[:, 8]),
+                channel_7_Electrons=(["expected_time"], result[:, 9]),
+                channel_8_Electrons=(["expected_time"], result[:, 10]),
+                channel_9_Electrons=(["expected_time"], result[:, 11]),
+                channel_10_Electrons=(["expected_time"], result[:,12]),
+                channel_11_Electrons=(["expected_time"], result[:,13]),
+                channel_12_Electrons=(["expected_time"], result[:,14]),
+                channel_13_Electrons=(["expected_time"], result[:,15]),
+                channel_14_Electrons=(["expected_time"], result[:,16]),
+                channel_15_Electrons=(["expected_time"], result[:,17]),
+                channel_16_Electrons=(["expected_time"], result[:,18]),
+                channel_17_Electrons=(["expected_time"], result[:,19]),
+                channel_18_Electrons=(["expected_time"], result[:,20]),
+                channel_19_Electrons=(["expected_time"], result[:,21]),
+                channel_20_Electrons=(["expected_time"], result[:,22]),
+                channel_1_Ions=      (["expected_time"], result[:,23]),
+                channel_2_Ions=      (["expected_time"], result[:,24]),
+                channel_3_Ions=      (["expected_time"], result[:,25]),
+                channel_4_Ions=      (["expected_time"], result[:,26]),
+                channel_5_Ions=      (["expected_time"], result[:,27]),
+                channel_6_Ions=      (["expected_time"], result[:,28]),
+                channel_7_Ions=      (["expected_time"], result[:,29]),
+                channel_8_Ions=      (["expected_time"], result[:,30]),
+                channel_9_Ions=      (["expected_time"], result[:,31]),
+                channel_10_Ions=     (["expected_time"], result[:,32]),
+                channel_11_Ions=     (["expected_time"], result[:,33]),
+                channel_12_Ions=     (["expected_time"], result[:,34]),
+                channel_13_Ions=     (["expected_time"], result[:,35]),
+                channel_14_Ions=     (["expected_time"], result[:,36]),
+                channel_15_Ions=     (["expected_time"], result[:,37]),
+                channel_16_Ions=     (["expected_time"], result[:,38]),
+                channel_17_Ions=     (["expected_time"], result[:,39]),
+                channel_18_Ions=     (["expected_time"], result[:,40]),
+                channel_19_Ions=     (["expected_time"], result[:,41]),
+                channel_20_Ions=     (["expected_time"], result[:,42]),
+            ),
+            coords=dict(
+                expected_time=expectedTime
+            ),
+            attrs=dict(description=f"SSJ4 transformed measures for every second on day {flightDate}")
+        )
+        return ds
     
     
 def createRawDataMeasuresSet(filename):
@@ -125,8 +196,8 @@ def createRawDataMeasuresSet(filename):
         minutesOfData = int(array.size / 2640)
         result = np.empty((minutesOfData*60, 43), dtype=np.uint16)
         for (j) in range(minutesOfData*60):
-            result[j][0] =  array[15+(j // 60)*2640+(j % 60)*43] # Hour of day for {i+1} second of data
-            result[j][1] =  array[16+(j // 60)*2640+(j % 60)*43] # Minute of hour for {i+1} second of data
+            result[j][0] =  array[15+(j // 60)*2640+(j % 60)*43] #Hour of day for {i+1} second of data
+            result[j][1] =  array[16+(j // 60)*2640+(j % 60)*43] #Minute of hour for {i+1} second of data
             result[j][2] =  array[17+(j // 60)*2640+(j % 60)*43] #Second of minute for {i+1} second of data
             result[j][3] =  array[21+(j // 60)*2640+(j % 60)*43] #Chanel 1, 30000 eV electrons
             result[j][4] =  array[20+(j // 60)*2640+(j % 60)*43] #Chanel 2, 20400 eV electrons
@@ -187,12 +258,13 @@ flightDay = filePathVars[-1][7:10]
 #print(createRawDataVariablesSet(filename)[0, :].tolist()) #Тест получения сырых переменных для каждой минуты
 ## ---- все ок
 
-print(createTransformedDataMeasuresSet(filename)[58,:].tolist()) #Тест получения сырых данных для каждой секунды
+#print(createTransformedDataMeasuresSet(filename)[58,:].tolist()) #Тест получения сырых данных для каждой секунды
 ## ---- все ок
 # for i in range(1,366):
 #     print(getCountsFromData(np.max(createRawDataMeasuresSet(f'f15/ssj/2005/test/j4f1505{str.zfill(str(i),3)}')[:,3::])))
 #     print(str.zfill(str(i),3))
 
+print(createTransformedDataMeasuresSet(filename))
 #TODO: сделать метод, возвращающий датасет для преобразованных данных для каждой секунды |
 #сделать проверку отправляемого в методы файлы на архив (если отправляется архив, то он распаковывается и дальше идет файл)
 #думаю это надо для красоты сделать через обертку методов |
